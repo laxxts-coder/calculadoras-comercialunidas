@@ -5,6 +5,20 @@ function fmt(n, dec = 2) {
   return Number(n).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
 
+
+function applyFormat(el) {
+  const pos = el.selectionStart;
+  const raw = el.value.replace(/[^0-9.]/g, '');
+  const parts = raw.split('.');
+  parts[0] = parts[0] === '' ? '' : Number(parts[0]).toLocaleString('en-US');
+  const formatted = parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
+  const diff = formatted.length - el.value.length;
+  el.value = formatted;
+  try { el.setSelectionRange(pos + diff, pos + diff); } catch {}
+}
+function getRawVal(el) {
+  return parseFloat(el.value.replace(/,/g, '')) || 0;
+}
 // ═══════════════════════════════════════════════════════
 //  NAVEGACIÓN
 // ═══════════════════════════════════════════════════════
@@ -234,16 +248,16 @@ function loadDesc() {
 function saveDesc() {
   try {
     localStorage.setItem('desc_state', JSON.stringify({
-      precio: $('precio-original').value,
-      final:  $('precio-final-input').value
+      precio: $('precio-original').value.replace(/,/g, ''),
+      final:  $('precio-final-input').value.replace(/,/g, '')
     }));
   } catch {}
 }
 
 function calcDesc() {
-  const precio = parseFloat($('precio-original').value);
-  const final  = parseFloat($('precio-final-input').value);
-  if (!precio || precio<=0 || isNaN(final) || final<0 || final>precio) {
+  const precio = getRawVal($('precio-original'));
+  const final  = getRawVal($('precio-final-input'));
+  if (!precio || precio<=0 || !final || final<=0 || isNaN(final) || final>precio) {
     $('resultado-desc').style.display='none'; return;
   }
   const ahorro = precio - final;
@@ -258,8 +272,8 @@ function calcDesc() {
   saveDesc();
 }
 
-$('precio-original').addEventListener('input', () => { calcDesc(); saveDesc(); });
-$('precio-final-input').addEventListener('input', () => { calcDesc(); saveDesc(); });
+$('precio-original').addEventListener('input', (e) => { applyFormat(e.target); calcDesc(); saveDesc(); });
+$('precio-final-input').addEventListener('input', (e) => { applyFormat(e.target); calcDesc(); saveDesc(); });
 
 $('precio-original').addEventListener('keydown', e => {
   if (e.key==='Enter') { e.preventDefault(); $('precio-final-input').focus(); }
@@ -299,14 +313,14 @@ function saveIva() {
   try {
     localStorage.setItem('iva_standalone_state', JSON.stringify({
       tasa:  $('tasa-iva').value,
-      total: $('monto-total-iva').value,
+      total: $('monto-total-iva').value.replace(/,/g, ''),
     }));
   } catch {}
 }
 
 function calcIva() {
   const tasa  = parseFloat($('tasa-iva').value) || 15;
-  const total = parseFloat($('monto-total-iva').value);
+  const total = getRawVal($('monto-total-iva'));
   if (!total || total<=0) { $('resultado-iva').style.display='none'; return; }
   const pBase = total/(1+tasa/100);
   const pIva  = total-pBase;
@@ -318,7 +332,7 @@ function calcIva() {
   saveIva();
 }
 
-$('monto-total-iva').addEventListener('input', () => { calcIva(); saveIva(); });
+$('monto-total-iva').addEventListener('input', (e) => { applyFormat(e.target); calcIva(); saveIva(); });
 $('tasa-iva').addEventListener('input', () => { calcIva(); saveIva(); });
 
 $('btn-reset-iva').addEventListener('click', () => {
