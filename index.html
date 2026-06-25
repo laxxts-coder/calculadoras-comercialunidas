@@ -155,7 +155,7 @@ label { font-size: 11px; color: var(--muted); font-weight: 500; }
 }
 .input-wrap:focus-within { border-color: var(--accent); }
 
-input[type="number"] {
+input {
   flex: 1;
   background: transparent;
   border: none;
@@ -167,8 +167,8 @@ input[type="number"] {
   min-width: 0;
   width: 0;
 }
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button { opacity: 0; }
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button { opacity: 0; }
 
 .unit {
   padding: 0 7px;
@@ -570,14 +570,14 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0; }
             <label for="precio-original">Precio Original</label>
             <div class="input-wrap">
               <span class="unit unit-left">L</span>
-              <input type="number" id="precio-original" placeholder="0.00" min="0" step="0.01" />
+              <input type="text" inputmode="decimal" id="precio-original" placeholder="0.00" />
             </div>
           </div>
           <div class="input-group">
             <label for="precio-final-input">Precio Final</label>
             <div class="input-wrap">
               <span class="unit unit-left">L</span>
-              <input type="number" id="precio-final-input" placeholder="0.00" min="0" step="0.01" />
+              <input type="text" inputmode="decimal" id="precio-final-input" placeholder="0.00" />
             </div>
           </div>
         </div>
@@ -620,7 +620,7 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0; }
             <label for="monto-total-iva">Total (Con IVA)</label>
             <div class="input-wrap">
               <span class="unit unit-left">L</span>
-              <input type="number" id="monto-total-iva" placeholder="0.00" min="0" step="0.01" />
+              <input type="text" inputmode="decimal" id="monto-total-iva" placeholder="0.00" />
             </div>
           </div>
           <div class="input-group">
