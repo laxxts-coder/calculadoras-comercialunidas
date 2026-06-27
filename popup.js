@@ -225,15 +225,10 @@ $('btn-reset').addEventListener('click', () => {
 
 // Formateo en tiempo real con comas
 function formatInput(el) {
-  const pos = el.selectionStart;
-  const prevLen = el.value.length;
   const raw = el.value.replace(/,/g, '').replace(/[^\d.]/g, '');
   const parts = raw.split('.');
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  const formatted = parts.length > 1 ? parts[0] + '.' + parts.slice(1).join('') : parts[0];
-  el.value = formatted;
-  const diff = formatted.length - prevLen;
-  el.setSelectionRange(pos + diff, pos + diff);
+  el.value = parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
 }
 function getRaw(el) {
   return parseFloat(el.value.replace(/,/g, '')) || 0;
