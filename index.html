@@ -884,15 +884,10 @@ $('btn-reset').addEventListener('click', () => {
 
 // Formateo en tiempo real con comas
 function formatInput(el) {
-  const pos = el.selectionStart;
-  const prevLen = el.value.length;
   const raw = el.value.replace(/,/g, '').replace(/[^\d.]/g, '');
   const parts = raw.split('.');
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  const formatted = parts.length > 1 ? parts[0] + '.' + parts.slice(1).join('') : parts[0];
-  el.value = formatted;
-  const diff = formatted.length - prevLen;
-  el.setSelectionRange(pos + diff, pos + diff);
+  el.value = parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
 }
 function getRaw(el) {
   return parseFloat(el.value.replace(/,/g, '')) || 0;
@@ -1002,45 +997,6 @@ $('btn-reset-iva').addEventListener('click', () => {
   $('resultado-iva').style.display='none'; saveIva();
   $('monto-total-iva').focus();
 });
-function loadIva() {
-  try {
-    const d = JSON.parse(localStorage.getItem('iva_standalone_state') || '{}');
-    if (d.tasa)  $('tasa-iva').value        = d.tasa;
-    if (d.total) $('monto-total-iva').value = d.total;
-  } catch {}
-}
-function saveIva() {
-  try {
-    localStorage.setItem('iva_standalone_state', JSON.stringify({
-      tasa:  $('tasa-iva').value,
-      total: $('monto-total-iva').value,
-    }));
-  } catch {}
-}
-
-function calcIva() {
-  const tasa  = parseFloat($('tasa-iva').value) || 15;
-  const total = parseFloat($('monto-total-iva').value);
-  if (!total || total<=0) { $('resultado-iva').style.display='none'; return; }
-  const pBase = total/(1+tasa/100);
-  const pIva  = total-pBase;
-  $('res-base-iva').textContent  = `L ${fmt(pBase)}`;
-  $('res-label-iva').textContent = `IVA ${tasa}%`;
-  $('res-monto-iva').textContent = `L ${fmt(pIva)}`;
-  $('res-total-iva').textContent = `L ${fmt(total)}`;
-  $('resultado-iva').style.display='block';
-  saveIva();
-}
-
-$('monto-total-iva').addEventListener('input', () => { calcIva(); saveIva(); });
-$('tasa-iva').addEventListener('input', () => { calcIva(); saveIva(); });
-
-$('btn-reset-iva').addEventListener('click', () => {
-  $('monto-total-iva').value=''; $('tasa-iva').value='15';
-  $('resultado-iva').style.display='none'; saveIva();
-  $('monto-total-iva').focus();
-});
-
 // ═══════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════
