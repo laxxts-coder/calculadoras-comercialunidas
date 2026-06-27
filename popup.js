@@ -5,20 +5,6 @@ function fmt(n, dec = 2) {
   return Number(n).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
 
-
-function applyFormat(el) {
-  const pos = el.selectionStart;
-  const raw = el.value.replace(/[^0-9.]/g, '');
-  const parts = raw.split('.');
-  parts[0] = parts[0] === '' ? '' : Number(parts[0]).toLocaleString('en-US');
-  const formatted = parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
-  const diff = formatted.length - el.value.length;
-  el.value = formatted;
-  try { el.setSelectionRange(pos + diff, pos + diff); } catch {}
-}
-function getRawVal(el) {
-  return parseFloat(el.value.replace(/,/g, '')) || 0;
-}
 // ═══════════════════════════════════════════════════════
 //  NAVEGACIÓN
 // ═══════════════════════════════════════════════════════
@@ -236,28 +222,45 @@ $('btn-reset').addEventListener('click', () => {
 // ═══════════════════════════════════════════════════════
 //  CALCULADORA 2: DESCUENTO (tu código original)
 // ═══════════════════════════════════════════════════════
+
+// Formateo en tiempo real con comas
+function formatInput(el) {
+  const pos = el.selectionStart;
+  const prevLen = el.value.length;
+  const raw = el.value.replace(/,/g, '').replace(/[^\d.]/g, '');
+  const parts = raw.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const formatted = parts.length > 1 ? parts[0] + '.' + parts.slice(1).join('') : parts[0];
+  el.value = formatted;
+  const diff = formatted.length - prevLen;
+  el.setSelectionRange(pos + diff, pos + diff);
+}
+function getRaw(el) {
+  return parseFloat(el.value.replace(/,/g, '')) || 0;
+}
+
 let pctResultado = 0;
 
 function loadDesc() {
   try {
     const d = JSON.parse(localStorage.getItem('desc_state') || '{}');
-    if (d.precio) $('precio-original').value   = d.precio;
-    if (d.final)  $('precio-final-input').value = d.final;
+    if (d.precio) { $('precio-original').value = d.precio; formatInput($('precio-original')); }
+    if (d.final)  { $('precio-final-input').value = d.final; formatInput($('precio-final-input')); }
   } catch {}
 }
 function saveDesc() {
   try {
     localStorage.setItem('desc_state', JSON.stringify({
-      precio: $('precio-original').value.replace(/,/g, ''),
-      final:  $('precio-final-input').value.replace(/,/g, '')
+      precio: $('precio-original').value.replace(/,/g,''),
+      final:  $('precio-final-input').value.replace(/,/g,'')
     }));
   } catch {}
 }
 
 function calcDesc() {
-  const precio = getRawVal($('precio-original'));
-  const final  = getRawVal($('precio-final-input'));
-  if (!precio || precio<=0 || !final || final<=0 || isNaN(final) || final>precio) {
+  const precio = getRaw($('precio-original'));
+  const final  = getRaw($('precio-final-input'));
+  if (!precio || precio<=0 || !$('precio-final-input').value || isNaN(final) || final<0 || final>precio) {
     $('resultado-desc').style.display='none'; return;
   }
   const ahorro = precio - final;
@@ -272,8 +275,8 @@ function calcDesc() {
   saveDesc();
 }
 
-$('precio-original').addEventListener('input', (e) => { applyFormat(e.target); calcDesc(); saveDesc(); });
-$('precio-final-input').addEventListener('input', (e) => { applyFormat(e.target); calcDesc(); saveDesc(); });
+$('precio-original').addEventListener('input', () => { formatInput($('precio-original')); calcDesc(); saveDesc(); });
+$('precio-final-input').addEventListener('input', () => { formatInput($('precio-final-input')); calcDesc(); saveDesc(); });
 
 $('precio-original').addEventListener('keydown', e => {
   if (e.key==='Enter') { e.preventDefault(); $('precio-final-input').focus(); }
@@ -305,22 +308,22 @@ $('btn-reset-desc').addEventListener('click', () => {
 function loadIva() {
   try {
     const d = JSON.parse(localStorage.getItem('iva_standalone_state') || '{}');
-    if (d.tasa)  $('tasa-iva').value        = d.tasa;
-    if (d.total) $('monto-total-iva').value = d.total;
+    if (d.tasa)  $('tasa-iva').value = d.tasa;
+    if (d.total) { $('monto-total-iva').value = d.total; formatInput($('monto-total-iva')); }
   } catch {}
 }
 function saveIva() {
   try {
     localStorage.setItem('iva_standalone_state', JSON.stringify({
       tasa:  $('tasa-iva').value,
-      total: $('monto-total-iva').value.replace(/,/g, ''),
+      total: $('monto-total-iva').value.replace(/,/g,''),
     }));
   } catch {}
 }
 
 function calcIva() {
   const tasa  = parseFloat($('tasa-iva').value) || 15;
-  const total = getRawVal($('monto-total-iva'));
+  const total = getRaw($('monto-total-iva'));
   if (!total || total<=0) { $('resultado-iva').style.display='none'; return; }
   const pBase = total/(1+tasa/100);
   const pIva  = total-pBase;
@@ -332,7 +335,7 @@ function calcIva() {
   saveIva();
 }
 
-$('monto-total-iva').addEventListener('input', (e) => { applyFormat(e.target); calcIva(); saveIva(); });
+$('monto-total-iva').addEventListener('input', () => { formatInput($('monto-total-iva')); calcIva(); saveIva(); });
 $('tasa-iva').addEventListener('input', () => { calcIva(); saveIva(); });
 
 $('btn-reset-iva').addEventListener('click', () => {
