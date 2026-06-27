@@ -1,10 +1,10 @@
 {
-  "name": "Comercial Unidas",
-  "short_name": "Comercial Unidas",
+  "name": "Calculadoras ARB",
+  "short_name": "Calc ARB",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2196F3",
+  "background_color": "#1a1a1e",
+  "theme_color": "#c8a96e",
   "icons": [
     {
       "src": "icon128.png",
