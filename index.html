@@ -1404,7 +1404,7 @@ function kbShow(id) {
   const isLast = ctx.idx === seq.fields.length - 1;
   kbBtn.innerHTML = isLast
     ? `${seq.finalLabel} <span class="kb-icon">✓</span>`
-    : `Siguiente <span class="kb-icon">›</span>`;
+    : `Siguiente <span class="kb-icon">➜</span>`;
   kbRefresh();
   // Reintento: el teclado tarda un momento en animarse al abrir, así que
   // volvemos a medir un instante después para no perder el momento exacto
