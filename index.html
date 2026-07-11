@@ -1401,6 +1401,10 @@ function kbShow(id) {
     ? `${seq.finalLabel} <span class="kb-icon">✓</span>`
     : `Siguiente <span class="kb-icon">›</span>`;
   kbRefresh();
+  // Reintento de seguridad: si el evento de visualViewport no llegó a
+  // tiempo (por ejemplo justo después de volver de segundo plano), volvemos
+  // a medir cuando ya terminó la animación de apertura del teclado.
+  setTimeout(kbRefresh, 350);
 }
 
 function kbHide() {
@@ -1451,6 +1455,24 @@ document.addEventListener('focusout', () => {
 window.addEventListener('resize', () => {
   if (!kbKeyboardOpen) kbBaseHeight = window.innerHeight;
 });
+
+// Recalibra la base al volver de segundo plano. Cuando la app estuvo
+// mucho tiempo en pausa, el sistema puede cambiar la altura visible
+// (barra de direcciones, notificaciones, etc.) y la medida vieja del
+// teclado queda desactualizada, dejando el botón "atascado" invisible.
+// Al regresar asumimos que el teclado está cerrado y recalculamos todo.
+function kbRecalibrarAlVolver() {
+  kbKeyboardOpen = false;
+  kbBaseHeight = window.innerHeight;
+  kbRefresh();
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') kbRecalibrarAlVolver();
+});
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) kbRecalibrarAlVolver();
+});
+window.addEventListener('focus', kbRecalibrarAlVolver);
 
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', kbRefresh);
