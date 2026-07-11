@@ -1386,9 +1386,18 @@ function kbMeasureKeyboard() {
 
 function kbRefresh() {
   const h = kbMeasureKeyboard();
-  kbKeyboardOpen = h > 80; // umbral para filtrar ruido/variaciones menores
-  if (kbKeyboardOpen) kbToolbar.style.bottom = h + 'px';
-  kbToolbar.classList.toggle('visible', !!(kbCalc && kbKeyboardOpen));
+  kbKeyboardOpen = h > 80; // solo se usa para decidir cuándo recalibrar la base
+  // La posición (bottom offset) sí depende de la medida del teclado, pero
+  // la VISIBILIDAD del botón depende únicamente de si hay una casilla
+  // enfocada — eso es 100% confiable, a diferencia de medir el viewport,
+  // que puede fallar según el navegador/dispositivo y dejar el botón
+  // invisible aunque el teclado esté abierto.
+  // Si hay un campo enfocado pero la medida sale muy baja (probablemente
+  // errónea), usamos una altura de respaldo para que el botón no quede
+  // escondido detrás del teclado real.
+  const offset = (kbCalc && h < 100) ? 260 : h;
+  kbToolbar.style.bottom = Math.max(offset, 0) + 'px';
+  kbToolbar.classList.toggle('visible', !!kbCalc);
 }
 
 function kbShow(id) {
@@ -1450,10 +1459,11 @@ document.addEventListener('focusout', () => {
   }, 60);
 });
 
-// Actualiza la base de altura solo cuando el teclado está cerrado
-// (evita que un cambio de orientación con el teclado abierto rompa el cálculo).
+// Actualiza la base de altura solo cuando el teclado está cerrado y no hay
+// ningún campo enfocado (evita que la propia apertura del teclado, o un
+// cambio de orientación, contaminen la medida base con un valor ya achicado).
 window.addEventListener('resize', () => {
-  if (!kbKeyboardOpen) kbBaseHeight = window.innerHeight;
+  if (!kbKeyboardOpen && !kbCalc) kbBaseHeight = window.innerHeight;
 });
 
 // Recalibra la base al volver de segundo plano. Cuando la app estuvo
