@@ -1369,6 +1369,13 @@ const kbSequences = {
 let kbCalc = null, kbIndex = -1;
 let kbKeyboardOpen = false;
 
+// Algunos iPhone muestran una barra de accesorios (flechas ↑↓ y "Done")
+// arriba del teclado numérico que visualViewport no siempre refleja del
+// todo en su medida — le damos un margen extra en iOS para que el botón
+// no quede tapado detrás de esa barra. Android no la necesita.
+const kbEsIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const kbMargenExtra = kbEsIOS ? 46 : 6;
+
 function kbFind(id) {
   for (const key of Object.keys(kbSequences)) {
     const idx = kbSequences[key].fields.indexOf(id);
@@ -1389,12 +1396,13 @@ function kbMeasureKeyboard() {
 function kbRefresh() {
   const h = kbMeasureKeyboard();
   kbKeyboardOpen = h > 80; // umbral para filtrar ruido/variaciones menores
-  if (kbKeyboardOpen) kbToolbar.style.bottom = h + 'px';
+  if (kbKeyboardOpen) kbToolbar.style.bottom = (h + kbMargenExtra) + 'px';
   // El botón solo se muestra si HAY un campo enfocado Y el teclado está
   // realmente abierto — así desaparece si cierras el teclado manualmente
   // sin quitarle el foco a la casilla.
   kbToolbar.classList.toggle('visible', !!(kbCalc && kbKeyboardOpen));
 }
+
 
 function kbShow(id) {
   const ctx = kbFind(id);
