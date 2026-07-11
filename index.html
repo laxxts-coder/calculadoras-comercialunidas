@@ -440,6 +440,40 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0; }
 }
 .shake { animation: shake .35s ease; }
 
+/* ─── Barra flotante sobre teclado ──────────────────────── */
+.kb-toolbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 14px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+.kb-toolbar.visible { opacity: 1; transform: translateY(0); }
+.kb-toolbar-btn {
+  pointer-events: all;
+  background: var(--accent);
+  color: #1a1208;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: 0 6px 18px rgba(0,0,0,.45);
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: .3px;
+  transition: background .15s, transform .1s;
+}
+.kb-toolbar-btn:hover  { background: #d9bb82; }
+.kb-toolbar-btn:active { transform: scale(.96); }
+
 /* ─── Precio cerámica ───────────────────────────────────── */
 .precio-section { border-top: 1px solid var(--border); }
 .precio-header { display:flex; align-items:center; padding:8px 14px; background:var(--surface2); font-size:11px; font-weight:700; color:var(--accent); letter-spacing:.4px; }
@@ -797,6 +831,12 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0; }
 
     <footer class="footer">ARB</footer>
   </div>
+
+  <!-- ─── Barra flotante sobre teclado (Siguiente/Calcular) ─── -->
+  <div class="kb-toolbar" id="kb-toolbar">
+    <button class="kb-toolbar-btn" id="kb-toolbar-btn" type="button">Siguiente</button>
+  </div>
+
   <script>
 'use strict';
 const $ = id => document.getElementById(id);
@@ -1293,6 +1333,100 @@ setTimeout(() => {
   if (activo === 'iva')       $('monto-total-iva').focus();
   if (activo === 'laminas')   $('cant-laminas').focus();
 }, 80);
+
+// ═══════════════════════════════════════════════════════
+// BARRA FLOTANTE SOBRE TECLADO (Siguiente / Calcular)
+// ═══════════════════════════════════════════════════════
+const kbToolbar = $('kb-toolbar');
+const kbBtn = $('kb-toolbar-btn');
+
+const kbSequences = {
+  ceramica: {
+    fields: ['metros-caja', 'piezas', 'metros-total', 'desperdicio'],
+    finalLabel: 'Calcular',
+    finalAction: () => { $('btn-calcular').click(); if (document.activeElement) document.activeElement.blur(); }
+  },
+  descuento: {
+    fields: ['precio-original', 'precio-final-input'],
+    finalLabel: 'Listo',
+    finalAction: () => { if (document.activeElement) document.activeElement.blur(); }
+  },
+  laminas: {
+    fields: ['cant-laminas', 'largo-laminas'],
+    finalLabel: 'Agregar',
+    finalAction: () => { $('btn-agregar').click(); }
+  }
+};
+
+let kbCalc = null, kbIndex = -1;
+
+function kbFind(id) {
+  for (const key of Object.keys(kbSequences)) {
+    const idx = kbSequences[key].fields.indexOf(id);
+    if (idx !== -1) return { key, idx };
+  }
+  return null;
+}
+
+function kbPosition() {
+  if (!window.visualViewport) return;
+  const vv = window.visualViewport;
+  const offset = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+  kbToolbar.style.bottom = offset + 'px';
+}
+
+function kbShow(id) {
+  const ctx = kbFind(id);
+  if (!ctx) { kbHide(); return; }
+  kbCalc = ctx.key; kbIndex = ctx.idx;
+  const seq = kbSequences[ctx.key];
+  const isLast = ctx.idx === seq.fields.length - 1;
+  kbBtn.textContent = isLast ? seq.finalLabel : 'Siguiente';
+  kbToolbar.classList.add('visible');
+  kbPosition();
+}
+
+function kbHide() {
+  kbToolbar.classList.remove('visible');
+  kbCalc = null; kbIndex = -1;
+}
+
+// Evita que el input pierda el foco al tocar el botón (mantiene el teclado abierto sin parpadeo)
+kbBtn.addEventListener('mousedown', e => e.preventDefault());
+kbBtn.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+
+kbBtn.addEventListener('click', () => {
+  if (!kbCalc) return;
+  const seq = kbSequences[kbCalc];
+  const isLast = kbIndex === seq.fields.length - 1;
+  if (isLast) {
+    seq.finalAction();
+    kbHide();
+  } else {
+    const nextId = seq.fields[kbIndex + 1];
+    $(nextId).focus();
+  }
+});
+
+Object.values(kbSequences).forEach(seq => {
+  seq.fields.forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('focus', () => kbShow(id));
+  });
+});
+
+document.addEventListener('focusout', () => {
+  setTimeout(() => {
+    const active = document.activeElement;
+    if (active === kbBtn) return;
+    if (!active || !kbFind(active.id)) kbHide();
+  }, 60);
+});
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', kbPosition);
+  window.visualViewport.addEventListener('scroll', kbPosition);
+}
 
   </script>
   <script>
