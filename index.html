@@ -27,6 +27,10 @@
 
 html, body {
   touch-action: pan-x pan-y;
+  -webkit-tap-highlight-color: transparent;
+}
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 body {
   width: 100%; max-width: 100%;
@@ -1364,7 +1368,6 @@ const kbSequences = {
 
 let kbCalc = null, kbIndex = -1;
 let kbKeyboardOpen = false;
-let kbBaseHeight = window.innerHeight;
 
 function kbFind(id) {
   for (const key of Object.keys(kbSequences)) {
@@ -1374,30 +1377,23 @@ function kbFind(id) {
   return null;
 }
 
-// Altura del teclado = diferencia entre la altura original de la página
-// y la altura visible actual (visualViewport). Usamos una base fija en vez
-// de window.innerHeight en vivo porque en Android ambos valores se achican
-// juntos cuando aparece el teclado, y la resta daría siempre ~0.
+// Altura del teclado = diferencia EN VIVO entre la altura de la página y la
+// altura visible actual (visualViewport), medida en el momento, sin guardar
+// ninguna base en caché (eso fue lo que causaba que se corrompiera).
 function kbMeasureKeyboard() {
   if (!window.visualViewport) return 0;
   const vv = window.visualViewport;
-  return Math.max(0, kbBaseHeight - (vv.height + vv.offsetTop));
+  return Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
 }
 
 function kbRefresh() {
   const h = kbMeasureKeyboard();
-  kbKeyboardOpen = h > 80; // solo se usa para decidir cuándo recalibrar la base
-  // La posición (bottom offset) sí depende de la medida del teclado, pero
-  // la VISIBILIDAD del botón depende únicamente de si hay una casilla
-  // enfocada — eso es 100% confiable, a diferencia de medir el viewport,
-  // que puede fallar según el navegador/dispositivo y dejar el botón
-  // invisible aunque el teclado esté abierto.
-  // Si hay un campo enfocado pero la medida sale muy baja (probablemente
-  // errónea), usamos una altura de respaldo para que el botón no quede
-  // escondido detrás del teclado real.
-  const offset = (kbCalc && h < 100) ? 260 : h;
-  kbToolbar.style.bottom = Math.max(offset, 0) + 'px';
-  kbToolbar.classList.toggle('visible', !!kbCalc);
+  kbKeyboardOpen = h > 80; // umbral para filtrar ruido/variaciones menores
+  if (kbKeyboardOpen) kbToolbar.style.bottom = h + 'px';
+  // El botón solo se muestra si HAY un campo enfocado Y el teclado está
+  // realmente abierto — así desaparece si cierras el teclado manualmente
+  // sin quitarle el foco a la casilla.
+  kbToolbar.classList.toggle('visible', !!(kbCalc && kbKeyboardOpen));
 }
 
 function kbShow(id) {
@@ -1410,9 +1406,9 @@ function kbShow(id) {
     ? `${seq.finalLabel} <span class="kb-icon">✓</span>`
     : `Siguiente <span class="kb-icon">›</span>`;
   kbRefresh();
-  // Reintento de seguridad: si el evento de visualViewport no llegó a
-  // tiempo (por ejemplo justo después de volver de segundo plano), volvemos
-  // a medir cuando ya terminó la animación de apertura del teclado.
+  // Reintento: el teclado tarda un momento en animarse al abrir, así que
+  // volvemos a medir un instante después para no perder el momento exacto
+  // en el que realmente termina de aparecer.
   setTimeout(kbRefresh, 350);
 }
 
@@ -1463,31 +1459,6 @@ document.addEventListener('focusout', () => {
     if (!active || !kbFind(active.id)) kbHide();
   }, 60);
 });
-
-// Actualiza la base de altura solo cuando el teclado está cerrado y no hay
-// ningún campo enfocado (evita que la propia apertura del teclado, o un
-// cambio de orientación, contaminen la medida base con un valor ya achicado).
-window.addEventListener('resize', () => {
-  if (!kbKeyboardOpen && !kbCalc) kbBaseHeight = window.innerHeight;
-});
-
-// Recalibra la base al volver de segundo plano. Cuando la app estuvo
-// mucho tiempo en pausa, el sistema puede cambiar la altura visible
-// (barra de direcciones, notificaciones, etc.) y la medida vieja del
-// teclado queda desactualizada, dejando el botón "atascado" invisible.
-// Al regresar asumimos que el teclado está cerrado y recalculamos todo.
-function kbRecalibrarAlVolver() {
-  kbKeyboardOpen = false;
-  kbBaseHeight = window.innerHeight;
-  kbRefresh();
-}
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') kbRecalibrarAlVolver();
-});
-window.addEventListener('pageshow', (e) => {
-  if (e.persisted) kbRecalibrarAlVolver();
-});
-window.addEventListener('focus', kbRecalibrarAlVolver);
 
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', kbRefresh);
