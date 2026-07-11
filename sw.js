@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calculadoras-arb-v2';
+const CACHE_NAME = 'calculadoras-arb-v3'; // subir versión = limpia la caché vieja al instante
 
 // Solo los archivos que realmente existen en el servidor
 const ASSETS = [
@@ -30,14 +30,34 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Sirve desde caché; si no está, va a internet y lo guarda para después
+// HTML: "network-first" — siempre intenta traer la versión más reciente de
+// internet primero (para que las actualizaciones lleguen de inmediato al
+// reabrir la app), y solo usa la copia guardada en caché si no hay conexión.
+// Resto de archivos (íconos, manifest): "cache-first", porque casi nunca
+// cambian y así la app abre más rápido / funciona sin internet.
 self.addEventListener('fetch', e => {
+  const req = e.request;
+  const esHTML = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
+
+  if (esHTML) {
+    e.respondWith(
+      fetch(req)
+        .then(response => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+          return response;
+        })
+        .catch(() => caches.match(req)) // sin internet -> usa la copia guardada
+    );
+    return;
+  }
+
   e.respondWith(
-    caches.match(e.request).then(cached => {
+    caches.match(req).then(cached => {
       if (cached) return cached;
-      return fetch(e.request).then(response => {
+      return fetch(req).then(response => {
         const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, copy));
+        caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
         return response;
       });
     })
