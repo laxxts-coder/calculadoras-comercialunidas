@@ -1447,7 +1447,12 @@ kbBtn.addEventListener('click', () => {
 Object.values(kbSequences).forEach(seq => {
   seq.fields.forEach(id => {
     const el = $(id);
-    if (el) el.addEventListener('focus', () => kbShow(id));
+    if (!el) return;
+    el.addEventListener('focus', () => kbShow(id));
+    // 'focus' NO se dispara si el campo ya estaba enfocado (ej. el primer
+    // campo, que se enfoca automáticamente al abrir la app). 'click' sí se
+    // dispara siempre que tocas el campo, sin importar si ya tenía el foco.
+    el.addEventListener('click', () => kbShow(id));
   });
 });
 
