@@ -1374,7 +1374,16 @@ let kbKeyboardOpen = false;
 // todo en su medida — le damos un margen extra en iOS para que el botón
 // no quede tapado detrás de esa barra. Android no la necesita.
 const kbEsIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-const kbMargenExtra = kbEsIOS ? 46 : 6;
+// No se puede saber el MODELO de iPhone (Apple lo oculta por privacidad),
+// pero sí la VERSIÓN de iOS instalada — y "Liquid Glass" es justo un cambio
+// de diseño a nivel de versión de iOS, no de modelo de hardware, así que
+// esta es la señal correcta de todos modos.
+function kbVersionIOS() {
+  const m = navigator.userAgent.match(/OS (\d+)_/);
+  return m ? parseInt(m[1], 10) : null;
+}
+const kbVerIOS = kbEsIOS ? kbVersionIOS() : null;
+const kbMargenExtra = !kbEsIOS ? 6 : (kbVerIOS && kbVerIOS >= 26 ? 78 : 58);
 
 function kbFind(id) {
   for (const key of Object.keys(kbSequences)) {
