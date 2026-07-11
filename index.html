@@ -1359,6 +1359,8 @@ const kbSequences = {
 };
 
 let kbCalc = null, kbIndex = -1;
+let kbKeyboardOpen = false;
+let kbBaseHeight = window.innerHeight;
 
 function kbFind(id) {
   for (const key of Object.keys(kbSequences)) {
@@ -1368,32 +1370,42 @@ function kbFind(id) {
   return null;
 }
 
-function kbPosition() {
-  if (!window.visualViewport) return;
+// Altura del teclado = diferencia entre la altura original de la página
+// y la altura visible actual (visualViewport). Usamos una base fija en vez
+// de window.innerHeight en vivo porque en Android ambos valores se achican
+// juntos cuando aparece el teclado, y la resta daría siempre ~0.
+function kbMeasureKeyboard() {
+  if (!window.visualViewport) return 0;
   const vv = window.visualViewport;
-  const offset = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
-  kbToolbar.style.bottom = offset + 'px';
+  return Math.max(0, kbBaseHeight - (vv.height + vv.offsetTop));
+}
+
+function kbRefresh() {
+  const h = kbMeasureKeyboard();
+  kbKeyboardOpen = h > 80; // umbral para filtrar ruido/variaciones menores
+  if (kbKeyboardOpen) kbToolbar.style.bottom = h + 'px';
+  kbToolbar.classList.toggle('visible', !!(kbCalc && kbKeyboardOpen));
 }
 
 function kbShow(id) {
   const ctx = kbFind(id);
-  if (!ctx) { kbHide(); return; }
+  if (!ctx) { kbCalc = null; kbIndex = -1; kbRefresh(); return; }
   kbCalc = ctx.key; kbIndex = ctx.idx;
   const seq = kbSequences[ctx.key];
   const isLast = ctx.idx === seq.fields.length - 1;
   kbBtn.textContent = isLast ? seq.finalLabel : 'Siguiente';
-  kbToolbar.classList.add('visible');
-  kbPosition();
+  kbRefresh();
 }
 
 function kbHide() {
-  kbToolbar.classList.remove('visible');
   kbCalc = null; kbIndex = -1;
+  kbRefresh();
 }
 
-// Evita que el input pierda el foco al tocar el botón (mantiene el teclado abierto sin parpadeo)
+// Evita que el input pierda el foco al tocar el botón (mantiene el teclado
+// abierto sin parpadeo). NOTA: NO usar preventDefault en touchstart — eso
+// cancela el evento click sintetizado en móviles y el botón deja de responder.
 kbBtn.addEventListener('mousedown', e => e.preventDefault());
-kbBtn.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
 
 kbBtn.addEventListener('click', () => {
   if (!kbCalc) return;
@@ -1423,9 +1435,15 @@ document.addEventListener('focusout', () => {
   }, 60);
 });
 
+// Actualiza la base de altura solo cuando el teclado está cerrado
+// (evita que un cambio de orientación con el teclado abierto rompa el cálculo).
+window.addEventListener('resize', () => {
+  if (!kbKeyboardOpen) kbBaseHeight = window.innerHeight;
+});
+
 if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', kbPosition);
-  window.visualViewport.addEventListener('scroll', kbPosition);
+  window.visualViewport.addEventListener('resize', kbRefresh);
+  window.visualViewport.addEventListener('scroll', kbRefresh);
 }
 
   </script>
