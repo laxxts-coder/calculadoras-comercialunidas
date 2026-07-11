@@ -4,7 +4,7 @@
   <link rel="apple-touch-icon" href="icon128.png">
   <link rel="manifest" href="manifest.json">
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Comercial Unidas</title>
   <style>
 /* ─── Reset & Base ─────────────────────────────────────── */
@@ -25,6 +25,9 @@
   --radius-lg: 14px;
 }
 
+html, body {
+  touch-action: pan-x pan-y;
+}
 body {
   width: 100%; max-width: 100%;
   background: var(--bg);
@@ -161,9 +164,9 @@ input[type="text"] {
   background: transparent;
   border: none;
   outline: none;
-  padding: 8px 6px 8px 10px;
+  padding: 6px 4px 6px 8px;
   color: var(--text);
-  font-size: 13px;
+  font-size: 16px;
   font-family: inherit;
   min-width: 0;
   width: 0;
