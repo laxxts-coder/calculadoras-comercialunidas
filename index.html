@@ -1493,7 +1493,22 @@ if (window.visualViewport) {
   <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Modo offline listo', reg))
+      .then(reg => {
+        console.log('Modo offline listo', reg);
+        // Fuerza revisar si hay una versión nueva cada vez que se abre la app,
+        // en vez de esperar a que el navegador lo haga solo (puede tardar horas).
+        reg.update();
+
+        // Si detecta que un Service Worker nuevo tomó el control, recarga la
+        // página una sola vez para asegurar que se usen los archivos recién
+        // actualizados (evita quedarse "atascado" en una versión vieja).
+        let recargando = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (recargando) return;
+          recargando = true;
+          window.location.reload();
+        });
+      })
       .catch(err => console.error('Error al activar offline', err));
   }
 </script>
