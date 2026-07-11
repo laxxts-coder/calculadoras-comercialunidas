@@ -458,21 +458,25 @@ input[type="number"]::-webkit-outer-spin-button { opacity: 0; }
 .kb-toolbar.visible { opacity: 1; transform: translateY(0); }
 .kb-toolbar-btn {
   pointer-events: all;
-  background: var(--accent);
-  color: #1a1208;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  color: var(--accent);
   font-weight: 700;
   font-size: 14px;
-  padding: 10px 22px;
-  border: none;
-  border-radius: var(--radius);
-  box-shadow: 0 6px 18px rgba(0,0,0,.45);
+  padding: 9px 20px;
+  border: 2px solid var(--accent);
+  border-radius: 20px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.55);
   cursor: pointer;
   font-family: inherit;
   letter-spacing: .3px;
   transition: background .15s, transform .1s;
 }
-.kb-toolbar-btn:hover  { background: #d9bb82; }
+.kb-toolbar-btn:hover  { background: var(--border); }
 .kb-toolbar-btn:active { transform: scale(.96); }
+.kb-toolbar-btn .kb-icon { font-size: 12px; line-height: 1; }
 
 /* ─── Precio cerámica ───────────────────────────────────── */
 .precio-section { border-top: 1px solid var(--border); }
@@ -1393,7 +1397,9 @@ function kbShow(id) {
   kbCalc = ctx.key; kbIndex = ctx.idx;
   const seq = kbSequences[ctx.key];
   const isLast = ctx.idx === seq.fields.length - 1;
-  kbBtn.textContent = isLast ? seq.finalLabel : 'Siguiente';
+  kbBtn.innerHTML = isLast
+    ? `${seq.finalLabel} <span class="kb-icon">✓</span>`
+    : `Siguiente <span class="kb-icon">›</span>`;
   kbRefresh();
 }
 
@@ -1413,7 +1419,12 @@ kbBtn.addEventListener('click', () => {
   const isLast = kbIndex === seq.fields.length - 1;
   if (isLast) {
     seq.finalAction();
-    kbHide();
+    // Algunas acciones (ej. "Agregar" en Láminas) limpian y vuelven a
+    // enfocar el primer campo para seguir agregando; otras (Calcular,
+    // Listo) quitan el foco por completo. Revisamos qué quedó activo.
+    const active = document.activeElement;
+    const ctx = active ? kbFind(active.id) : null;
+    if (ctx) kbShow(active.id); else kbHide();
   } else {
     const nextId = seq.fields[kbIndex + 1];
     $(nextId).focus();
