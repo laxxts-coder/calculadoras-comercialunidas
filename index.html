@@ -827,12 +827,10 @@ function mostrarCalc(nombre) {
   $('dropdown').classList.remove('open');
   try { localStorage.setItem('calc_activo', nombre); } catch {}
 
-  setTimeout(() => {
-    if (nombre === 'ceramica')  $('metros-caja').focus();
-    if (nombre === 'descuento') $('precio-original').focus();
-    if (nombre === 'iva')       $('monto-total-iva').focus();
-    if (nombre === 'laminas')   $('cant-laminas').focus();
-  }, 50);
+  if (nombre === 'ceramica')  $('metros-caja').focus();
+  if (nombre === 'descuento') $('precio-original').focus();
+  if (nombre === 'iva')       $('monto-total-iva').focus();
+  if (nombre === 'laminas')   $('cant-laminas').focus();
 }
 
 $('btn-menu').addEventListener('click', e => {
@@ -1022,7 +1020,7 @@ $('btn-reset').addEventListener('click', () => {
   out.resultado.style.display='none';
   out.piezaInfo.style.display='none';
   try { localStorage.removeItem('ceramica_inputs'); } catch {}
-  setTimeout(() => $('metros-caja').focus(), 50);
+  $('metros-caja').focus();
 });
 
 // ═══════════════════════════════════════════════════════
